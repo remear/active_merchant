@@ -256,6 +256,20 @@ module ActiveMerchant #:nodoc:
         recurring_commit(:status, request)
       end
 
+      # Perform an eCheck.net purchase, which is essentially an authorization and capture in a single operation.
+      #
+      # ==== Parameters
+      #
+      # * <tt>money</tt> -- The amount to be purchased. Either an Integer value in cents or a Money object.
+      # * <tt>check</tt> -- The Check object for the transaction.
+      # * <tt>options</tt> -- A hash of optional parameters.
+      def echeck(money, check, options = {})
+       post = {:method => "ECHECK"}
+       add_check(post, check)
+       post.merge!(options)
+       commit("AUTH_CAPTURE", money, post)
+      end
+      
       private
       
       def commit(action, money, parameters)
@@ -326,6 +340,16 @@ module ActiveMerchant #:nodoc:
         request
       end
 
+      def add_check(post, check)
+        post[:bank_aba_code]     = check.routing_number 
+        post[:bank_acct_num]     = check.account_number 
+        post[:bank_acct_type]    = check.account_type
+        post[:bank_name]         = check.bank_name
+        post[:bank_acct_name]    = check.bank_account_name
+        post[:echeck_type]       = check.echeck_type
+        post[:bank_check_number] = check.number
+      end
+      
       def add_invoice(post, options)
         post[:invoice_num] = options[:order_id]
         post[:description] = options[:description]
@@ -654,7 +678,8 @@ module ActiveMerchant #:nodoc:
 
       def recurring_commit(action, request)
         url = test? ? arb_test_url : arb_live_url
-        xml = ssl_post(url, request, "Content-Type" => "text/xml")
+        #xml = ssl_post(url, request, "Content-Type" => "text/xml")
+        xml = ssl_post(url, request, "Content-Type" => "application/x-www-form-urlencoded")
         
         response = recurring_parse(action, xml)
 

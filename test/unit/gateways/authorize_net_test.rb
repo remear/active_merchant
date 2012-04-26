@@ -264,6 +264,14 @@ class AuthorizeNetTest < Test::Unit::TestCase
     assert_equal '2013-11', @gateway.send(:arb_expdate, credit_card('4111111111111111', :month => "11", :year => "2013"))
   end
 
+  def test_echeck
+    check = Check.new(:routing_number => "111000025", :account_number => "123456789012")
+    response = @gateway.send(:echeck, 100, check)
+    assert_instance_of Response, response
+    assert response.success?
+    assert response.test?
+  end
+  
   def test_solution_id_is_added_to_post_data_parameters
     assert !@gateway.send(:post_data, 'AUTH_ONLY').include?("x_solution_ID=A1000000")
     ActiveMerchant::Billing::AuthorizeNetGateway.application_id = 'A1000000'
